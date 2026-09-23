@@ -2,7 +2,7 @@
 
 Build and maintain `.gitignore` files from a library of templates, in an interactive terminal UI or from the command line.
 
-- **Works offline.** More than 300 templates from [github/gitignore](https://github.com/github/gitignore) are built into the binary. When online, gignore adds about 570 more from [gitignore.io](https://www.toptal.com/developers/gitignore) and caches them.
+- **Works offline.** More than 300 templates from [github/gitignore](https://github.com/github/gitignore) are built into the binary. When online, gignore also loads the catalog from [gitignore.io](https://www.toptal.com/developers/gitignore) and caches it. Together they provide more than 600 unique templates.
 - **Keeps your rules.** gignore owns only a marked block in the file. Everything outside it is preserved on every update.
 - **Detects your stack.** It suggests templates from the files in your project, such as `go.mod`, `package.json`, or `.vscode/`.
 - **Checks your file.** `gignore check` finds tracked files that should be ignored, negations that can never match, stray whitespace, and an outdated generated block.
@@ -187,7 +187,7 @@ To add your own templates, put `*.gitignore` files in `~/.config/gignore/templat
 | Source | Count | Availability |
 | --- | --- | --- |
 | Built-in, from [github/gitignore](https://github.com/github/gitignore) | 300+ | Always, including offline |
-| [gitignore.io](https://www.toptal.com/developers/gitignore) | about 570 | Online; cached for 7 days and used when a later fetch fails |
+| [gitignore.io](https://www.toptal.com/developers/gitignore) | about 570, most overlapping the built-in set | Online; cached for 7 days and used when a later fetch fails |
 | Your templates | any | Always |
 
 A weekly workflow refreshes the built-in templates. The github/gitignore templates are distributed under [CC0 1.0](internal/catalog/builtin/data/LICENSE).

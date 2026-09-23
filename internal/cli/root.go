@@ -14,8 +14,8 @@ func newRoot(a *app) *cobra.Command {
 	root := &cobra.Command{
 		Use:   version.Name + " [templates...]",
 		Short: "Build and maintain .gitignore files from a library of templates",
-		Long: `gignore builds .gitignore files from more than 300 built-in templates, plus
-about 570 from gitignore.io when online.
+		Long: `gignore builds .gitignore files from more than 300 built-in templates. When
+online, it adds the gitignore.io catalog, for more than 600 in total.
 
 Run it in a terminal to open the interactive picker, with any templates you name
 already selected. When output is piped or redirected, gignore prints the rules
