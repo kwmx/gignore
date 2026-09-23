@@ -1,0 +1,164 @@
+# Release configuration. Run `goreleaser release --snapshot --clean` to test locally.
+version: 2
+
+project_name: gignore
+
+before:
+  hooks:
+    - go mod tidy
+    - ./scripts/completions.sh
+    - ./scripts/manpages.sh
+
+builds:
+  - id: gignore
+    main: ./cmd/gignore
+    binary: gignore
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/kwmx/gignore/internal/version.Version={{ .Version }}
+      - -X github.com/kwmx/gignore/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/kwmx/gignore/internal/version.Date={{ .CommitDate }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    goos: [linux, darwin, windows, freebsd]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      - completions/*
+      - manpages/*
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Other changes
+      order: 999
+
+# Homebrew: brew install kwmx/tap/gignore
+homebrew_casks:
+  - name: gignore
+    repository:
+      owner: kwmx
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/kwmx/gignore
+    description: Build and maintain .gitignore files from a library of templates
+    license: MIT
+    binaries: [gignore]
+    manpages: [manpages/gignore.1.gz]
+    completions:
+      bash: completions/gignore.bash
+      zsh: completions/gignore.zsh
+      fish: completions/gignore.fish
+    hooks:
+      post:
+        # The binary isn't notarized; remove the quarantine flag so macOS runs it.
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/gignore"]
+          end
+
+# Scoop (Windows): scoop bucket add kwmx https://github.com/kwmx/scoop-bucket; scoop install gignore
+scoops:
+  - name: gignore
+    repository:
+      owner: kwmx
+      name: scoop-bucket
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    directory: bucket
+    homepage: https://github.com/kwmx/gignore
+    description: Build and maintain .gitignore files from a library of templates
+    license: MIT
+
+# Linux packages attached to each release.
+nfpms:
+  - id: packages
+    package_name: gignore
+    vendor: kwmx
+    homepage: https://github.com/kwmx/gignore
+    maintainer: kwmx <faisal1kwmx@gmail.com>
+    description: Build and maintain .gitignore files from a library of templates
+    license: MIT
+    formats: [deb, rpm, apk, archlinux]
+    section: devel
+    recommends: [git]
+    contents:
+      - src: ./completions/gignore.bash
+        dst: /usr/share/bash-completion/completions/gignore
+        file_info: { mode: 0644 }
+      - src: ./completions/gignore.fish
+        dst: /usr/share/fish/vendor_completions.d/gignore.fish
+        file_info: { mode: 0644 }
+      - src: ./completions/gignore.zsh
+        dst: /usr/share/zsh/vendor-completions/_gignore
+        file_info: { mode: 0644 }
+      - src: ./manpages/gignore*.1.gz
+        dst: /usr/share/man/man1/
+        file_info: { mode: 0644 }
+      - src: ./LICENSE
+        dst: /usr/share/doc/gignore/copyright
+        file_info: { mode: 0644 }
+
+# winget: publishing opens a pull request against microsoft/winget-pkgs from
+# your fork. Create the fork first, then remove skip_upload.
+winget:
+  - name: gignore
+    publisher: kwmx
+    short_description: Build and maintain .gitignore files from a library of templates
+    license: MIT
+    homepage: https://github.com/kwmx/gignore
+    publisher_url: https://github.com/kwmx
+    package_identifier: kwmx.gignore
+    skip_upload: true
+    repository:
+      owner: kwmx
+      name: winget-pkgs
+      branch: "gignore-{{ .Version }}"
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+
+release:
+  github:
+    owner: kwmx
+    name: gignore
+  footer: |
+    ## Install
+
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/kwmx/gignore/main/install.sh | sh
+    ```
+
+    Other options (Homebrew, Scoop, Linux packages, `go install`) are in the [README](https://github.com/kwmx/gignore#install).

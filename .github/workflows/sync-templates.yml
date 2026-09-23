@@ -1,0 +1,41 @@
+name: Sync templates
+
+# Refreshes the templates built into the binary from github/gitignore and opens
+# a pull request when anything changed.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: git clone --depth 1 https://github.com/github/gitignore "$RUNNER_TEMP/gitignore"
+      - run: go run ./tools/synctemplates -src "$RUNNER_TEMP/gitignore"
+      - run: go test ./internal/catalog/... ./internal/detect/...
+      - name: Skip if only the sync date changed
+        id: diff
+        run: |
+          if git diff --quiet -- internal/catalog/builtin/data ':!internal/catalog/builtin/data/SOURCE' && \
+             [ -z "$(git ls-files --others --exclude-standard internal/catalog/builtin/data)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          branch: chore/sync-templates
+          commit-message: "chore: sync built-in templates from github/gitignore"
+          title: "chore: sync built-in templates from github/gitignore"
+          body: Automated weekly refresh of the templates embedded in the binary.
+          delete-branch: true
