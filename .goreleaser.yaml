@@ -78,13 +78,15 @@ homebrew_casks:
       bash: completions/gignore.bash
       zsh: completions/gignore.zsh
       fish: completions/gignore.fish
-    hooks:
-      post:
-        # The binary isn't notarized; remove the quarantine flag so macOS runs it.
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/gignore"]
-          end
+    # The binary isn't notarized; remove the quarantine flag so macOS runs it.
+    # Homebrew 7 replaced Ruby `postflight` blocks with declarative steps.
+    # `{{staged_path}}` is a Homebrew placeholder, escaped from GoReleaser's templates.
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ "{{staged_path}}" }}/gignore"]
+        end
+      end
 
 # Scoop (Windows): scoop bucket add kwmx https://github.com/kwmx/scoop-bucket; scoop install gignore
 scoops:
